@@ -84,8 +84,17 @@ ratkiez key AKIASWXXXXXXXXXXXXXX AKIASWXXXXXXXXXXXXXX --all-profiles --format js
 
 ## Installation
 
+### Binary
+
+Download the binary from the [releases](https://github.com/rootsami/ratkiez/releases)
+
+### Build from source
+
 ```bash
-go build -o ratkiez cmd/ratkiez/main.go
+
+$ git clone https://github.com/rootsami/ratkiez.git
+$ go build -o ratkiez cmd/ratkiez/main.go
+
 ```
 
 ## License
