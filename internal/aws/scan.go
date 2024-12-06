@@ -3,21 +3,37 @@ package aws
 
 import (
 	"fmt"
+	"sync"
 
 	"ratkiez/internal/types"
 
 	"github.com/aws/aws-sdk-go/service/iam"
+	"golang.org/x/sync/errgroup"
 )
 
 func (c *Client) collectByUser(users []*iam.User) (types.KeyDetailsSlice, error) {
-	var details types.KeyDetailsSlice
+	var (
+		details types.KeyDetailsSlice
+		mu      sync.Mutex
+		g       errgroup.Group
+	)
 
 	for _, user := range users {
-		userDetails, err := c.getUserDetails(user)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get details for user %s: %v", *user.UserName, err)
-		}
-		details = append(details, userDetails...)
+		g.Go(func() error {
+			userDetails, err := c.getUserDetails(user)
+			if err != nil {
+				return fmt.Errorf("failed to get details for user %s: %v", *user.UserName, err)
+			}
+			mu.Lock()
+			details = append(details, userDetails...)
+			mu.Unlock()
+			return nil
+		})
+
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, err
 	}
 
 	return details, nil

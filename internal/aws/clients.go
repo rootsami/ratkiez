@@ -6,12 +6,14 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"ratkiez/internal/types"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/iam"
+	"golang.org/x/sync/errgroup"
 	"gopkg.in/ini.v1"
 )
 
@@ -99,16 +101,29 @@ func getAllProfiles() ([]string, error) {
 
 // ExecuteCommand executes the specified command across all clients
 func ExecuteCommand(cmd string, clients []*Client, config *CommandConfig) (types.KeyDetailsSlice, error) {
-	var allData types.KeyDetailsSlice
+	var (
+		allData types.KeyDetailsSlice
+		mu      sync.Mutex
+		g       errgroup.Group
+	)
 
-	for _, client := range clients {
-		data, err := client.executeCommand(cmd, config)
-		if err != nil {
-			// Log error but continue with other clients
-			fmt.Printf("Warning: Error processing profile %s: %v\n", client.profile, err)
-			continue
-		}
-		allData = append(allData, data...)
+	for _, c := range clients {
+		g.Go(func() error {
+			data, err := c.executeCommand(cmd, config)
+			if err != nil {
+				return fmt.Errorf("profile %s: %w", c.profile, err)
+			}
+
+			mu.Lock()
+			allData = append(allData, data...)
+			mu.Unlock()
+
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, err
 	}
 
 	if len(allData) == 0 {
