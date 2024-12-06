@@ -55,7 +55,7 @@ func (f *Formatter) printTable(data types.KeyDetailsSlice) error {
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader(headers)
-	table.SetAutoWrapText(false)
+	table.SetAutoWrapText(true)
 	table.SetAutoFormatHeaders(true)
 	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
