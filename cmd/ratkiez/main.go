@@ -20,6 +20,8 @@ var (
 	profiles    = app.Flag("profile", "AWS profiles, reusable to add more profiles").Default("default").Strings()
 	allProfiles = app.Flag("all-profiles", "Use all profiles in ~/.aws/config").Bool()
 	outputFmt   = app.Flag("format", "Output format, json, table or csv").Default("table").Enum("table", "json", "csv")
+	isOrg       = app.Flag("org", "Scan all organization member accounts").Bool()
+	orgRole     = app.Flag("role-name", "Role name to assume in organization member accounts").Default("OrganizationAccountAccessRole").String()
 
 	// Commands
 	scan     = app.Command("scan", "Scan all AWS keys. ex: ratkiez scan --profile profile1 --profile profile2")
@@ -52,12 +54,17 @@ func executeCommand(cmd string, clients []*aws.Client) error {
 func main() {
 	cmd := kingpin.MustParse(app.Parse(os.Args[1:]))
 
+	// prevent using both --all-profiles and --org flags
+	if *allProfiles && *isOrg {
+		log.Fatal("Cannot use --all-profiles and --org flags together")
+	}
+
 	profiles, err := aws.GetProfiles(*allProfiles, *profiles)
 	if err != nil {
 		log.Fatalf("Failed to get profiles: %v", err)
 	}
 
-	clients, err := aws.NewClients(profiles, *region)
+	clients, err := aws.NewClients(profiles, *region, *isOrg, *orgRole)
 	if err != nil {
 		log.Fatalf("Failed to create clients: %v", err)
 	}

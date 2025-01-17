@@ -63,6 +63,8 @@ func (c *Client) getUserDetails(user *iam.User) (types.KeyDetailsSlice, error) {
 			LastUsedDate: "N/A",
 			Policies:     policies,
 			Profile:      c.profile,
+			AccountID:    c.accountID,
+			AccountName:  c.accountName,
 		})
 		return details, nil
 	}
@@ -80,6 +82,8 @@ func (c *Client) getUserDetails(user *iam.User) (types.KeyDetailsSlice, error) {
 			LastUsedDate: lastUsed,
 			Policies:     policies,
 			Profile:      c.profile,
+			AccountID:    c.accountID,
+			AccountName:  c.accountName,
 		})
 	}
 

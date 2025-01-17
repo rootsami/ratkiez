@@ -8,6 +8,8 @@ type KeyDetails struct {
 	LastUsedDate string   `json:"last_used_date"`
 	Policies     []string `json:"policies"`
 	Profile      string   `json:"profile"`
+	AccountID    string   `json:"account_id"`
+	AccountName  string   `json:"account_name"`
 }
 
 type KeyDetailsSlice []KeyDetails

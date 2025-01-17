@@ -39,7 +39,7 @@ func (f *Formatter) Print(data types.KeyDetailsSlice) error {
 }
 
 func (f *Formatter) printTable(data types.KeyDetailsSlice) error {
-	headers := []string{"USERNAME", "KEY-ID", "CREATION-DATE", "LAST-USED-DATE", "POLICIES", "PROFILE"}
+	headers := []string{"USERNAME", "KEY-ID", "CREATION-DATE", "LAST-USED-DATE", "POLICIES", "PROFILE", "ACCOUNT-NAME", "ACCOUNT-ID"}
 	var rows [][]string
 
 	for _, v := range data {
@@ -50,6 +50,8 @@ func (f *Formatter) printTable(data types.KeyDetailsSlice) error {
 			v.LastUsedDate,
 			strings.Join(v.Policies, ", "),
 			v.Profile,
+			v.AccountName,
+			v.AccountID,
 		})
 	}
 
@@ -84,7 +86,7 @@ func (f *Formatter) printJSON(data types.KeyDetailsSlice) error {
 func (f *Formatter) printCSV(data types.KeyDetailsSlice) error {
 
 	// Write headers
-	headers := []string{"USERNAME", "KEY-ID", "CREATION-DATE", "LAST-USED-DATE", "POLICIES", "PROFILE"}
+	headers := []string{"USERNAME", "KEY-ID", "CREATION-DATE", "LAST-USED-DATE", "POLICIES", "PROFILE", "ACCOUNT-NAME", "ACCOUNT-ID"}
 	fmt.Println(strings.Join(headers, ","))
 
 	// Write data
@@ -96,6 +98,8 @@ func (f *Formatter) printCSV(data types.KeyDetailsSlice) error {
 			v.LastUsedDate,
 			strings.Join(v.Policies, "; "),
 			v.Profile,
+			v.AccountName,
+			v.AccountID,
 		}
 		fmt.Println(strings.Join(record, ","))
 	}
