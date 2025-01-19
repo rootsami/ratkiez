@@ -6,7 +6,6 @@ Output is supported in multiple formats: json, table, and csv.
 
 ## Prerequisites
 
-- [Go](https://golang.org/doc/install)
 - Configured AWS credentials
 - Set `export AWS_SDK_LOAD_CONFIG=1` in your shell profile
 
@@ -23,6 +22,9 @@ Flags:
   --profile=default ...  AWS profiles, reusable to add more profiles
   --all-profiles         Use all profiles in ~/.aws/config
   --format=table         Output format, json, table or csv
+  --org                  Scan all organization member accounts
+  --role-name="OrganizationAccountAccessRole"  
+                         Role name to assume in organization member accounts
 
 Commands:
   help [<command>...]
@@ -50,6 +52,23 @@ ratkiez scan --profile aws-profile-eu-central-1 --profile aws-profile-us-west-2 
 
 ```
 
+### Scan An Organization Profile with Multiple Accounts
+```bash
+# Scan all users in all member accounts of an organization
+ratkiez scan --profile aws-org-profile --org --format table
+
+# Scan all users in all member accounts of an organization with custom role name
+ratkiez scan --profile aws-org-profile --org --role-name OrganizationAccountAccessRole --format table
+```
+Sample output:
+```
+USERNAME                                KEY-ID                  CREATION-DATE                    LAST-USED-DATE                 POLICIES                               PROFILE                    ACCOUNT_NAME                   ACCOUNT_ID
+example-lambda-user                     AKIASWXXXXXXXXXXXX      2021-02-15 10:53:57 +0000 UTC    Never Used                     AWSLambda_FullAccess                   org-management-account     management-account             123456789014
+xxxxx-sns-user                          AKIASWXXXXXXXXXXXX      2021-02-15 10:53:57 +0000 UTC    Never Used                     AWSLambda_FullAccess                   aws-profile-eu-central-1   member-account-1               123456789012
+s3-controller                           AKIASWXXXXXXXXXXXX      2020-05-15 08:07:18 +0000 UTC    2020-10-15 08:30:00 +0000 UTC  AmazonS3FullAccess                     aws-profile-us-west-2      member-account-2               123456789013
+```
+
+
 ### Scan All Profiles
 ```bash
 # Scan all users in all aws accounts configured in ~/.aws/config
@@ -58,10 +77,10 @@ ratkiez scan --all-profiles --format table
 
 Sample output:
 ```
-USERNAME                                KEY-ID                  CREATION-DATE                    LAST-USED-DATE                 POLICIES                               PROFILE
-xxxxx-sns-user                          AKIASWXXXXXXXXXXXX      2021-02-15 10:53:57 +0000 UTC    Never Used                     Access_Extension_Lambda                aws-profile-eu-central-1
+USERNAME                                KEY-ID                  CREATION-DATE                    LAST-USED-DATE                 POLICIES                               PROFILE                    ACCOUNT_NAME                   ACCOUNT_ID
+xxxxx-sns-user                          AKIASWXXXXXXXXXXXX      2021-02-15 10:53:57 +0000 UTC    Never Used                     AWSLambda_FullAccess                   aws-profile-eu-central-1
 s3-controller                           AKIASWXXXXXXXXXXXX      2020-05-15 08:07:18 +0000 UTC    2020-10-15 08:30:00 +0000 UTC  AmazonS3FullAccess                     aws-profile-us-west-2
-example-lambda-user                     AKIASWXXXXXXXXXXXX      2021-02-15 10:53:57 +0000 UTC    Never Used                     Access_Extension_Lambda                aws-profile-us-west-2
+example-lambda-user                     AKIASWXXXXXXXXXXXX      2021-02-15 10:53:57 +0000 UTC    Never Used                     AWSLambda_FullAccess                   aws-profile-us-west-2
 ```
 
 ### Look Up Specific User
@@ -89,6 +108,9 @@ ratkiez key AKIASWXXXXXXXXXXXXXX AKIASWXXXXXXXXXXXXXX --all-profiles --format js
 Download the binary from the [releases](https://github.com/rootsami/ratkiez/releases)
 
 ### Build from source
+
+Prerequisites:
+- [Go](https://golang.org/doc/install)
 
 ```bash
 

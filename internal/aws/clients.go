@@ -3,24 +3,11 @@ package aws
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
-	"sync"
-
-	"ratkiez/internal/types"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/iam"
-	"golang.org/x/sync/errgroup"
-	"gopkg.in/ini.v1"
 )
-
-type Client struct {
-	iam     *iam.IAM
-	profile string
-}
 
 type CommandConfig struct {
 	UserList []string
@@ -30,17 +17,47 @@ type CommandConfig struct {
 	KeyCmd   string
 }
 
+type Client struct {
+	session     *session.Session
+	iam         *iam.IAM
+	profile     string
+	accountID   string
+	accountName string
+}
+
 // NewClients creates multiple AWS clients for given profiles
-func NewClients(profiles []string, region string) ([]*Client, error) {
-	var clients []*Client
+func NewClients(profiles []string, region string, isOrg bool, orgRole string) ([]*Client, error) {
+	var allClients []*Client
+
 	for _, profile := range profiles {
+		// Create the main client for this profile
 		client, err := newClient(profile, region)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create client for profile %s: %v", profile, err)
 		}
-		clients = append(clients, client)
+
+		// Add the main client
+		allClients = append(allClients, client)
+
+		// If org flag is set, create clients for all member accounts
+		if isOrg {
+			memberClients, err := client.createMemberAccountClients(orgRole)
+			if err != nil {
+				// Log the error but continue with next profile
+				fmt.Printf("Warning: Failed to get member accounts for profile %s: %v\n", profile, err)
+				continue
+			}
+			if len(memberClients) > 0 {
+				allClients = append(allClients, memberClients...)
+			}
+		}
 	}
-	return clients, nil
+
+	if len(allClients) == 0 {
+		return nil, fmt.Errorf("no valid clients could be created")
+	}
+
+	return allClients, nil
 }
 
 // newClient creates a single AWS client
@@ -49,100 +66,18 @@ func newClient(profile, region string) (*Client, error) {
 		Config: aws.Config{
 			Region: aws.String(region),
 		},
-		Profile: profile,
+		Profile:           profile,
+		SharedConfigState: session.SharedConfigEnable,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create session: %v", err)
 	}
 
-	return &Client{
+	client := &Client{
+		session: sess,
 		iam:     iam.New(sess),
 		profile: profile,
-	}, nil
-}
-
-// GetProfiles returns list of AWS profiles to use
-func GetProfiles(useAllProfiles bool, specifiedProfiles []string) ([]string, error) {
-	if useAllProfiles {
-		return getAllProfiles()
-	}
-	return specifiedProfiles, nil
-}
-
-// TODO: make aws config path configurable
-// getAllProfiles reads all profiles from AWS config
-func getAllProfiles() ([]string, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return nil, fmt.Errorf("unable to get home directory: %v", err)
 	}
 
-	configPath := filepath.Join(homeDir, ".aws", "config")
-	cfg, err := ini.Load(configPath)
-	if err != nil {
-		return nil, fmt.Errorf("unable to load AWS config file: %v", err)
-	}
-
-	var profiles []string
-	for _, section := range cfg.Sections() {
-		name := section.Name()
-		if name == "default" {
-			profiles = append(profiles, "default")
-		} else if strings.HasPrefix(name, "profile ") {
-			profiles = append(profiles, strings.TrimPrefix(name, "profile "))
-		}
-	}
-
-	if len(profiles) == 0 {
-		return nil, fmt.Errorf("no AWS profiles found")
-	}
-	return profiles, nil
-}
-
-// ExecuteCommand executes the specified command across all clients
-func ExecuteCommand(cmd string, clients []*Client, config *CommandConfig) (types.KeyDetailsSlice, error) {
-	var (
-		allData types.KeyDetailsSlice
-		mu      sync.Mutex
-		g       errgroup.Group
-	)
-
-	for _, c := range clients {
-		g.Go(func() error {
-			data, err := c.executeCommand(cmd, config)
-			if err != nil {
-				return fmt.Errorf("profile %s: %w", c.profile, err)
-			}
-
-			mu.Lock()
-			allData = append(allData, data...)
-			mu.Unlock()
-
-			return nil
-		})
-	}
-
-	if err := g.Wait(); err != nil {
-		return nil, err
-	}
-
-	if len(allData) == 0 {
-		return nil, fmt.Errorf("no data collected from any profile")
-	}
-
-	return allData, nil
-}
-
-// executeCommand handles command execution for a single client
-func (c *Client) executeCommand(cmd string, config *CommandConfig) (types.KeyDetailsSlice, error) {
-	switch cmd {
-	case config.ScanCmd:
-		return c.scanCommand()
-	case config.UserCmd:
-		return c.userCommand(config.UserList)
-	case config.KeyCmd:
-		return c.keyCommand(config.KeyList)
-	default:
-		return nil, fmt.Errorf("unknown command: %s", cmd)
-	}
+	return client, nil
 }
