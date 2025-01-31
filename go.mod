@@ -1,11 +1,12 @@
 module ratkiez
 
-go 1.22.3
+go 1.23.5
 
 require (
 	github.com/alecthomas/kingpin v2.2.6+incompatible
 	github.com/aws/aws-sdk-go v1.55.5
 	github.com/olekukonko/tablewriter v0.0.5
+	golang.org/x/sync v0.10.0
 	gopkg.in/ini.v1 v1.67.0
 )
 
@@ -15,5 +16,4 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/stretchr/testify v1.10.0 // indirect
-	golang.org/x/sync v0.10.0 // indirect
 )

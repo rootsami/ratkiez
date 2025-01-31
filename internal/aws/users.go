@@ -31,7 +31,7 @@ func (c *Client) getUsersByUsernames(usernames []string) ([]*iam.User, error) {
 		})
 		if err != nil {
 			if strings.Contains(err.Error(), "NoSuchEntity") {
-				// slieently ignore users that don't exist
+				// silently ignore users that don't exist
 				continue
 			}
 			return nil, fmt.Errorf("failed to get user %s: %v", username, err)
