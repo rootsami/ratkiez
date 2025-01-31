@@ -1,4 +1,4 @@
-# Ratkiez
+# Ratkiez :rat::old_key:
 
 A CLI tool to rat on all aws keys based on creation date, last used date, and attached policies.
 
@@ -120,5 +120,4 @@ $ go build -o ratkiez cmd/ratkiez/main.go
 ```
 
 ## License
-
-## Contributing
+[MIT](LICENSE)
