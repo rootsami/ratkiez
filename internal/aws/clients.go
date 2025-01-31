@@ -9,14 +9,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam"
 )
 
-type CommandConfig struct {
-	UserList []string
-	KeyList  []string
-	ScanCmd  string
-	UserCmd  string
-	KeyCmd   string
-}
-
 type Client struct {
 	session     *session.Session
 	iam         *iam.IAM

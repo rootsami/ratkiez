@@ -2,12 +2,11 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
 	"ratkiez/internal/aws"
-	"ratkiez/internal/output"
+	"ratkiez/internal/exec"
 
 	"github.com/alecthomas/kingpin"
 )
@@ -31,26 +30,6 @@ var (
 	keyList  = key.Arg("key", "List of keys to scan").Strings()
 )
 
-func executeCommand(cmd string, clients []*aws.Client) error {
-	data, err := aws.ExecuteCommand(cmd, clients, &aws.CommandConfig{
-		UserList: *userList,
-		KeyList:  *keyList,
-		ScanCmd:  scan.FullCommand(),
-		UserCmd:  user.FullCommand(),
-		KeyCmd:   key.FullCommand(),
-	})
-	if err != nil {
-		return fmt.Errorf("command execution failed: %v", err)
-	}
-
-	formatter, err := output.NewFormatter(*outputFmt)
-	if err != nil {
-		return fmt.Errorf("failed to create output formatter: %v", err)
-	}
-
-	return formatter.Print(data)
-}
-
 func main() {
 	cmd := kingpin.MustParse(app.Parse(os.Args[1:]))
 
@@ -69,7 +48,14 @@ func main() {
 		log.Fatalf("Failed to create clients: %v", err)
 	}
 
-	if err := executeCommand(cmd, clients); err != nil {
+	config := exec.CommandConfig{
+		UserList:  *userList,
+		KeyList:   *keyList,
+		Cmd:       cmd,
+		OutputFmt: *outputFmt,
+	}
+
+	if err := exec.ExecuteCommand(clients, config); err != nil {
 		log.Fatalf("Error: %v", err)
 	}
 }
